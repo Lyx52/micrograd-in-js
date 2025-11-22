@@ -151,13 +151,23 @@ export class Value {
     }
 
     public tanh() {
-        const x = this.Data;
-        const t = (Math.exp(2 * x) - 1) / (Math.exp(2 * x) + 1);
-        const result = new Value(t, [this], 'tanh');
+        const sech2 = (x: number) => {
+            const cosh_x = Math.cosh(x);
+            if (Math.abs(cosh_x) < Number.EPSILON) {
+                return Number.POSITIVE_INFINITY;
+            }
+            return 1 / (cosh_x * cosh_x);
+        }
 
+        const result = new Value(Math.tanh(this.Data), [this], 'tanh');
         result._backward = (parent: Value) => {
             const current = parent._children[0];
-            current.Grad += (1 - Math.pow(t, 2)) *  parent.Grad;
+            const cosh_x = Math.cosh(parent.Data);
+            if (Math.abs(cosh_x) < Number.EPSILON) {
+                current.Grad += 0;
+            } else {
+                current.Grad += (1 / (cosh_x * cosh_x)) *  parent.Grad;
+            }
         }
 
         return result;

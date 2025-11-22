@@ -3,7 +3,7 @@ import {forward, renderGraph} from "../nn/utils.ts";
 import {Tensor} from "../nn/tensor.ts";
 
 export const runSimpleMLP = () => {
-    const mlp = new MLP(3, [1]);
+    const mlp = new MLP(3, [4, 1]);
     const xs = [
         Tensor.fromValues(2.0, 3.0, -1.0),
         Tensor.fromValues(3.0, -1.0, 0.5),
@@ -19,7 +19,7 @@ export const runSimpleMLP = () => {
 
     // Train
     const learningRate = 0.15;
-    const steps = 1000;
+    const steps = 20;
     let lossx = null;
     for (let i = 0; i <= steps; i++) {
         for (const parameter of  mlp.parameters()) {
@@ -35,7 +35,5 @@ export const runSimpleMLP = () => {
         lossx = lossItem;
     }
 
-   // renderGraph(lossx);
-
-    console.log(mlp);
+    renderGraph(lossx);
 }
