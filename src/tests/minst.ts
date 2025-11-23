@@ -41,12 +41,11 @@ export const runMinst = async (trainCount = 5, epochs = 500, learningRate = 0.25
             parameter.Data += -learningRate * parameter.Grad;
         }
 
-        const loss = crossEntropyLoss(module, ys, xs);
-        const lossItem = loss.item().shift();
+        const loss = crossEntropyLoss(module, ys, xs).scalar();
         module.zerograd();
-        lossItem.backward();
+        loss.backward();
 
-        console.log(`[Step ${i}/${epochs}] loss: ${lossItem.Data}`)
+        console.log(`[Step ${i}/${epochs}] loss: ${loss.Data}`)
     }
 }
 

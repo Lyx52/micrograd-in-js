@@ -108,6 +108,18 @@ export class Tensor {
         return tensor;
     }
 
+    public isScalar() {
+        return this.dimensions.length === 1 && this.dimensions[0] === 1;
+    }
+
+    public scalar(): Value {
+        if (!this.isScalar()) {
+            throw new Error('Tensor must be a scalar value!');
+        }
+
+        return this.backing[0] as Value;
+    }
+
     public item(): Value[] {
         return this.backing as Value[];
     }
