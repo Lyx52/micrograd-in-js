@@ -7,7 +7,16 @@ export const mse = (expected: number, result: number|Value): number => {
     return result instanceof Value ? Math.pow(expected - result.Data, 2) : Math.pow(expected - result, 2);
 }
 
-export const forward = (network: ICallable, ys: Tensor[], xs: Tensor[]) => {
+export const getTotalElements = (...dims: number[]): number => {
+    let elements = dims[0];
+    for (let i = 0; i < dims.length - 1; i++) {
+        elements *= dims[i + 1];
+    }
+
+    return elements;
+}
+
+export const crossEntropyLoss = (network: ICallable, ys: Tensor[], xs: Tensor[]) => {
     const losses: Tensor[] = [];
     for (let i = 0; i < xs.length; i++) {
         const result = network.execute(xs[i]);

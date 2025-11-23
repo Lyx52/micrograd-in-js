@@ -39,15 +39,8 @@ export class Value {
     }
 
     public static Random(): Value {
-        return new Value((Math.random() * -2) + 1, [], null);
-    }
-
-    public static Mse(expected: number|Value, result: number|Value): Value {
-        if (expected instanceof Value) {
-            return expected.clone().sub(result).pow(2)
-        }
-
-        return (new Value(expected)).sub(result).pow(2)
+        return new Value(Math.random(), [], null);
+        //return new Value((Math.random() * -2) + 1, [], null);
     }
 
     public clone(): Value {
@@ -150,20 +143,26 @@ export class Value {
         return result;
     }
 
-    public tanh() {
-        const sech2 = (x: number) => {
-            const cosh_x = Math.cosh(x);
-            if (Math.abs(cosh_x) < Number.EPSILON) {
-                return Number.POSITIVE_INFINITY;
-            }
-            return 1 / (cosh_x * cosh_x);
+    public mse(expected: number|Value): Value {
+        if (expected instanceof Value) {
+            return expected.clone().sub(this).pow(2)
         }
 
+        return (new Value(expected)).sub(this).pow(2)
+    }
+
+    public tanh() {
+        /**
+         * x = this.Data
+         * Formula: tanh(x)
+         * Derivative: dL/dx = 1 / (cos^2(x))
+         */
         const result = new Value(Math.tanh(this.Data), [this], 'tanh');
         result._backward = (parent: Value) => {
             const current = parent._children[0];
             const cosh_x = Math.cosh(parent.Data);
             if (Math.abs(cosh_x) < Number.EPSILON) {
+                console.warn("Unknown area, cosh(x) result for tanh is close to 0?")
                 current.Grad += 0;
             } else {
                 current.Grad += (1 / (cosh_x * cosh_x)) *  parent.Grad;
@@ -174,6 +173,14 @@ export class Value {
     }
 
     public add(other: Value|number) {
+        /**
+         * x = this.Data
+         * y = other.Data
+         * Formula: x + y
+         * Derivative:
+         *  -   dL/dx = L
+         *  -   dL/dy = L
+         */
         if (!(other instanceof Value)) {
             other = new Value(other);
         }
@@ -190,6 +197,15 @@ export class Value {
     }
 
     public mul(other: Value|number) {
+        /**
+         * x = this.Data
+         * y = other.Data
+         * Formula: x * y
+         * Derivative:
+         *  -   dL/dx = y
+         *  -   dL/dy = x
+         */
+
         if (!(other instanceof Value)) {
             other = new Value(other);
         }
@@ -208,6 +224,14 @@ export class Value {
     }
 
     public pow(other: Value|number) {
+        /**
+         * x = this.Data
+         * y = other.Data
+         * Formula: x^y
+         * Derivative:
+         *  -   dL/dx = y * x^(y - 1)
+         *  -   dL/dy = x^y * ln(y)
+         */
         if (!(other instanceof Value)) {
             other = new Value(other);
         }
@@ -217,9 +241,11 @@ export class Value {
         result._backward = (parent: Value) => {
             const first = parent._children[0];
             const second = parent._children[1];
+            const x = first.Data;
+            const z = Math.pow(x, second.Data);
 
-            first.Grad += second.Data * Math.pow(first.Data, (second.Data - 1)) * parent.Grad;
-            second.Grad += first.Data * Math.pow(second.Data, (first.Data - 1)) * parent.Grad;
+            first.Grad += second.Data * Math.pow(x, (second.Data - 1)) * parent.Grad;
+            second.Grad += z * Math.log(x) * parent.Grad;
         }
 
         return result;
@@ -238,11 +264,30 @@ export class Value {
     }
 
     public div(other: Value|number) {
+        /**
+         * x = this.Data
+         * y = other.Data
+         * Formula: x/y
+         * Derivative:
+         *  -   dL/dx = 1 / y
+         *  -   dL/dy = -x / y^2
+         */
         if (!(other instanceof Value)) {
             other = new Value(other);
         }
 
-        return this.mul(other.pow(-1));
+        const result = new Value(this.Data / other.Data, [this, other], '/');
+
+        result._backward = (parent: Value) => {
+            const first = parent._children[0];
+            const second = parent._children[1];
+            const y = second.Data;
+            const x = first.Data;
+            first.Grad += (1 / y) * parent.Grad;
+            second.Grad += (-x / (y * y)) * parent.Grad;
+        }
+
+        return result;
     }
 
     public toString() {

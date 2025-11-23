@@ -1,15 +1,10 @@
 import {Value} from "./value.ts";
+import {getTotalElements} from "./utils.ts";
 
 export type TensorDimension = (Value|TensorDimension)[];
 export type TensorApplyCallback = (value: Value, index: number) => Value;
-const getTotalElements = (...dims: number[]): number => {
-    let elements = dims[0];
-    for (let i = 0; i < dims.length - 1; i++) {
-        elements *= dims[i + 1];
-    }
+export type TensorCollapseCallback = (value: Value[], index: number) => Value;
 
-    return elements;
-}
 
 const getLength = (dimension: TensorDimension, target: number, current: number = 0): number => {
     if (target === current) {
@@ -29,7 +24,7 @@ const getDimensions = (dimension: TensorDimension|Value, dims: number[] = []): n
     return dims;
 }
 
-const flatten = (dimension: TensorDimension): TensorDimension => {
+export const flatten = (dimension: TensorDimension): TensorDimension => {
     if (Array.isArray(dimension)) {
         return dimension.flatMap(v => flatten(v as TensorDimension[]));
     }
@@ -53,6 +48,17 @@ function makeView(elements: TensorDimension, dims: number[], currentIndex: numbe
     return [buffer, currentIndex];
 }
 
+export function collapseDimensions(elements: TensorDimension, combined: number[], collapseCallback: TensorCollapseCallback): TensorDimension {
+    const dims = getDimensions(elements);
+    const current = combined.shift();
+    
+    const result: TensorDimension[] = [];
+
+
+    console.log(dims)
+    return elements;
+}
+
 export class Tensor {
     private backing: TensorDimension;
     private dimensions: number[];
@@ -68,6 +74,18 @@ export class Tensor {
         for (let i = 0; i < this.elements; i++) {
             this.backing.push(new Value(0));
         }
+    }
+
+    public setBacking(backing: TensorDimension): Tensor {
+        this.backing = backing;
+
+        return this;
+    }
+
+    public setDimensions(dims: number[]): Tensor {
+        this.dimensions = dims;
+
+        return this;
     }
 
     public static fromValues(...values: number[]) {
@@ -96,10 +114,9 @@ export class Tensor {
 
     public clone() {
         const tensor = new Tensor(...this.dimensions)
+        tensor.backing = this.item().map(v => v.clone());
 
-        return tensor.apply((value: Value, index: number) => {
-            return (this.backing[index] as Value).clone();
-        })
+        return tensor;
     }
 
     public apply(callback: TensorApplyCallback): Tensor {
@@ -122,6 +139,18 @@ export class Tensor {
         return this.view(...this.dimensions);
     }
 
+    public flatten(): Tensor {
+        return Tensor.from(...this.item());
+    }
+
+    public relu(): Tensor {
+        const tensor = new Tensor(...this.dimensions);
+
+        return tensor.apply((_: Value, index: number) => {
+            return (this.backing[index] as Value).clone().relu();
+        });
+    }
+
     public view(...dims: number[]): TensorDimension {
         const viewElements = getTotalElements(...dims);
         if (viewElements !== this.elements) {
@@ -131,26 +160,6 @@ export class Tensor {
         const [result, _] = makeView(this.backing, dims);
 
         return result;
-    }
-
-    public sum(): Tensor {
-        return Tensor.from(Value.Sum(...this.backing as Value[]));
-    }
-
-    public tanh(): Tensor {
-        return this.apply((value: Value) => {
-            return value.tanh();
-        });
-    }
-
-    public mse(expected: Tensor|number): Tensor {
-        return this.apply((value: Value, index: number)=> {
-            if (expected instanceof Tensor) {
-                return Value.Mse(expected.Backing[index] as Value, value);
-            }
-
-            return Value.Mse(expected as number, value);
-        });
     }
 
     public equalDimensions(other: Tensor): boolean {
@@ -167,61 +176,81 @@ export class Tensor {
         return true;
     }
 
-    public mul(other: Value|Tensor) {
-        if (other instanceof Tensor) {
-            if (!this.equalDimensions(other)) {
-                throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
-            }
-
-            const tensor = this.clone();
-            return tensor.apply((value: Value, index: number) => {
-                return value.mul(other.backing[index] as Value)
-            });
-        }
-
-        for (let i = 0; i < this.backing.length; i++) {
-            this.backing[i] = (this.backing[i] as Value).mul(other as Value);
-        }
-
-        return this;
+    public sum(): Tensor {
+        return Tensor.from(Value.Sum(...this.item()));
     }
 
-    public add(other: Value|Tensor) {
-        if (other instanceof Tensor) {
-            if (!this.equalDimensions(other)) {
-                throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
-            }
-
-            const tensor = this.clone();
-            return tensor.apply((value: Value, index: number) => {
-                return value.add(other.backing[index] as Value)
-            });
-        }
-
-        for (let i = 0; i < this.backing.length; i++) {
-            this.backing[i] = (this.backing[i] as Value).add(other as Value);
-        }
-
-        return this;
+    public tanh(): Tensor {
+        return Tensor.from(this.item()
+            .map(v => v.tanh())
+        );
     }
 
-    public sub(other: Value|Tensor) {
+    public softmax(dim: number = 0): Tensor {
+        const sum = Value.Sum(...this.item());
+        return Tensor.from(this.item()
+            .map(v => v.div(sum))
+        );
+    }
+
+    public mse(expected: Value|number|Tensor): Tensor {
+        if (expected instanceof Tensor) {
+            return Tensor.from(this.item()
+                .map((v, i) => v.mse(expected.item()[i]))
+            );
+        }
+
+        return Tensor.from(this.item()
+            .map(v => v.mse(expected as Value|number))
+        );
+    }
+
+    public mul(other: Value|number|Tensor) {
         if (other instanceof Tensor) {
             if (!this.equalDimensions(other)) {
                 throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
             }
 
-            const tensor = this.clone();
-            return tensor.apply((value: Value, index: number) => {
-                return value.sub(other.backing[index] as Value)
-            });
+            return Tensor.from(this.item()
+                .map((v, i) => v.mul(other.item()[i]))
+            )
         }
 
-        for (let i = 0; i < this.backing.length; i++) {
-            this.backing[i] = (this.backing[i] as Value).sub(other as Value);
+        return Tensor.from(this.item()
+            .map(v => v.mul(other as Value|number))
+        );
+    }
+
+    public add(other: Value|number|Tensor) {
+        if (other instanceof Tensor) {
+            if (!this.equalDimensions(other)) {
+                throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
+            }
+
+            return Tensor.from(this.item()
+                .map((v, i) => v.add(other.item()[i]))
+            )
         }
 
-        return this;
+        return Tensor.from(this.item()
+            .map(v => v.add(other as Value|number))
+        );
+    }
+
+    public sub(other: Value|number|Tensor) {
+        if (other instanceof Tensor) {
+            if (!this.equalDimensions(other)) {
+                throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
+            }
+
+            return Tensor.from(this.item()
+                .map((v, i) => v.sub(other.item()[i]))
+            )
+        }
+
+        return Tensor.from(this.item()
+            .map(v => v.sub(other as Value|number))
+        );
     }
 
     public static randn(...dims: number[]): Tensor {

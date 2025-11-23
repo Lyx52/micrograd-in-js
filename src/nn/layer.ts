@@ -2,16 +2,14 @@ import type {ICallable} from "./ICallable.ts";
 import { Neuron } from "./neuron.ts";
 import type {Value} from "./value.ts";
 import {Tensor} from "./tensor.ts";
+import type {IParameterized} from "./IParameterized.ts";
 
-export class Layer implements ICallable {
+export class Layer implements ICallable, IParameterized {
     private _neurons: Neuron[] = [];
-    private _inputs: number = 0;
-    constructor(inputs: number, outputs: number) {
+    constructor(inputs: number, outputs: number, useBias = true) {
         for (let i = 0; i < outputs; i++) {
-            this._neurons.push(new Neuron(inputs))
+            this._neurons.push(new Neuron(inputs, useBias))
         }
-
-        this._inputs = inputs;
     }
 
     zerograd() {
