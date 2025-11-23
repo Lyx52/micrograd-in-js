@@ -10,7 +10,7 @@ import {Softmax} from "../nn/softmax.ts";
 import {crossEntropyLoss} from "../nn/utils.ts";
 
 
-export const runMinst = async (trainCount = 5, epochs = 500, learningRate = 0.25) => {
+export const runMinst = async (trainCount = 50, epochs = 100, learningRate = 0.25) => {
     const [_, labelsData] = await readIdx(trainLabels, [trainCount]);
     const [imagesDims, imagesData] = await readIdx(trainImages, [trainCount, -1, -1]);
 
