@@ -1,3 +1,5 @@
+import {RandomGenerator} from "./random.ts";
+
 export class Value {
     public Data: number;
     public Grad: number;
@@ -39,8 +41,7 @@ export class Value {
     }
 
     public static Random(): Value {
-        return new Value(Math.random(), [], null);
-        //return new Value((Math.random() * -2) + 1, [], null);
+        return new Value(RandomGenerator.random(), [], null);
     }
 
     public clone(): Value {

@@ -1,11 +1,22 @@
 import { Value } from "./value";
-import type {ICallable} from "./ICallable.ts";
+import type {ICallable} from "./interfaces/ICallable.ts";
 import {Network} from "vis-network";
 import {v4 as uuid} from "uuid";
-import { Tensor } from "./tensor.ts";
+import {NewTensor} from "./tensor_new.ts";
 export const mse = (expected: number, result: number|Value): number => {
     return result instanceof Value ? Math.pow(expected - result.Data, 2) : Math.pow(expected - result, 2);
 }
+const BENCHMARKS_ENABLED = false;
+export const benchmarkStart = (name: string) => {
+    if (BENCHMARKS_ENABLED) {
+        console.time(name)
+    }
+};
+export const benchmarkEnd = (name: string) => {
+    if (BENCHMARKS_ENABLED) {
+        console.timeEnd(name)
+    }
+};
 
 export const getTotalElements = (...dims: number[]): number => {
     let elements = dims[0];
@@ -16,14 +27,14 @@ export const getTotalElements = (...dims: number[]): number => {
     return elements;
 }
 
-export const crossEntropyLoss = (network: ICallable, ys: Tensor[], xs: Tensor[]) => {
-    const losses: Tensor[] = [];
+export const crossEntropyLoss = (network: ICallable, ys: NewTensor[], xs: NewTensor[]) => {
+    const losses: NewTensor[] = [];
     for (let i = 0; i < xs.length; i++) {
         const result = network.execute(xs[i]);
         losses.push(result.mse(ys[i]));
     }
 
-    return Tensor.fromTensors(...losses).sum();
+    return NewTensor.fromTensors(losses).sum();
 }
 
 export const renderGraph = (root: Value) => {

@@ -1,8 +1,8 @@
-import type { ICallable } from "./ICallable.ts";
-import type {IModule} from "./IModule.ts";
-import type {Tensor} from "./tensor.ts";
-import type {IParameterized} from "./IParameterized.ts";
-import type { Value } from "./value.ts";
+import type { ICallable } from "../interfaces/ICallable.ts";
+import type {IModule} from "../interfaces/IModule.ts";
+import type {Tensor} from "../tensor.ts";
+import type {IParameterized, ParameterUpdateCallback} from "../interfaces/IParameterized.ts";
+import type {NewTensor} from "../tensor_new.ts";
 
 export class LinearModule implements IModule, ICallable, IParameterized {
     private _layers: ICallable[] = [];
@@ -11,18 +11,15 @@ export class LinearModule implements IModule, ICallable, IParameterized {
         this._layers = layers;
     }
 
-    parameters(): Value[] {
-        const params: Value[] = [];
+    public updateParameters(update: ParameterUpdateCallback) {
         for (const layer of (this._layers as unknown[] as IParameterized[])) {
-            if (layer.parameters) {
-                params.push(...layer.parameters());
+            if (layer.updateParameters) {
+                layer.updateParameters(update);
             }
         }
-
-        return params;
     }
 
-    zerograd() {
+    public zerograd() {
         for (const layer of (this._layers as unknown[] as IParameterized[])) {
             if (layer.zerograd) {
                 layer.zerograd();
@@ -30,11 +27,11 @@ export class LinearModule implements IModule, ICallable, IParameterized {
         }
     }
 
-    execute(inputs: Tensor): Tensor {
+    execute(inputs: NewTensor): NewTensor {
         return this.forward(inputs);
     }
 
-    forward(input: Tensor): Tensor {
+    forward(input: NewTensor): NewTensor {
         let x = input.clone();
         for (const layer of this._layers) {
             x = layer.execute(x);

@@ -1,9 +1,16 @@
 import {MLP} from "../nn/mlp/mlp.ts";
 import {crossEntropyLoss} from "../nn/utils.ts";
 import {NewTensor} from "../nn/tensor_new.ts";
+import {LinearModule} from "../nn/module/linear_module.ts";
+import {Linear} from "../nn/layers/linear.ts";
 
-export const runSimpleMLP = () => {
-    const mlp = new MLP(3, [4, 4, 1]);
+export const runSimpleMLP2 = () => {
+    const mlp = new LinearModule(
+        new Linear(3, 4),
+        new Linear(4, 4),
+        new Linear(4, 1),
+    );
+
     const xs = [
         NewTensor.from([2.0, 3.0, -1.0]),
         NewTensor.from([3.0, -1.0, 0.5]),
@@ -12,14 +19,14 @@ export const runSimpleMLP = () => {
     ];
     const ys = [
         NewTensor.from([1.0]),
-        NewTensor.from([-1.0]),
+        NewTensor.from([1.0]),
         NewTensor.from([-1.0]),
         NewTensor.from([1.0]),
     ];
 
     // Train
     const learningRate = 0.001;
-    const steps = 10000;
+    const steps = 1000;
     for (let i = 0; i <= steps; i++) {
         mlp.updateParameters((tensor: NewTensor) => {
             for (let j = 0; j < tensor.backing.length; j++) {
@@ -32,4 +39,5 @@ export const runSimpleMLP = () => {
         loss.backward();
         console.log(`[Step ${i}/${steps}] loss: ${loss.scalar()}`)
     }
+    console.log(mlp.execute(xs[2]))
 }

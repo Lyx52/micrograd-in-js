@@ -233,6 +233,22 @@ export class Tensor {
         );
     }
 
+    public div(other: Value|number|Tensor) {
+        if (other instanceof Tensor) {
+            if (!this.equalDimensions(other)) {
+                throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
+            }
+
+            return Tensor.from(this.item()
+                .map((v, i) => v.div(other.item()[i]))
+            )
+        }
+
+        return Tensor.from(this.item()
+            .map(v => v.div(other as Value|number))
+        );
+    }
+
     public add(other: Value|number|Tensor) {
         if (other instanceof Tensor) {
             if (!this.equalDimensions(other)) {
@@ -262,6 +278,22 @@ export class Tensor {
 
         return Tensor.from(this.item()
             .map(v => v.sub(other as Value|number))
+        );
+    }
+
+    public pow(other: Value|number|Tensor) {
+        if (other instanceof Tensor) {
+            if (!this.equalDimensions(other)) {
+                throw new Error(`Other tensor dimensions do not match [${this.dimensions.join(', ')}] and [${other.dimensions.join(', ')}]`);
+            }
+
+            return Tensor.from(this.item()
+                .map((v, i) => v.pow(other.item()[i]))
+            )
+        }
+
+        return Tensor.from(this.item()
+            .map(v => v.pow(other as Value|number))
         );
     }
 

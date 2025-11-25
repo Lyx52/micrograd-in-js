@@ -30,6 +30,10 @@ export class RandomGenerator {
         const result = (instance.a * instance.seed + instance.c) % instance.modulus;
         instance.seed = result;
 
-        return result / instance.c;
+        return result / instance.modulus;
+    }
+
+    public static randomFull() {
+        return (this.random() * -2) + 1;
     }
 }
