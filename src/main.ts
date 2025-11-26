@@ -1,3 +1,5 @@
-import {runMinst} from "./tests/minst.ts";
-import {runSimpleMLP2} from "./tests/simple_mlp_v2.ts";
-runSimpleMLP2();
+import { createApp } from 'vue'
+import './css/styles.css'
+import App from './App.vue'
+
+createApp(App).mount('#app')
