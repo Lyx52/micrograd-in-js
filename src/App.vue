@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import {BCol, BContainer, BRow} from "bootstrap-vue-next";
 import NetworkBuilder from "./components/NetworkBuilder.vue";
+import {BCol, BContainer, BRow} from "bootstrap-vue-next";
 </script>
 
 <template>
-  <BContainer class="bv-example-row">
-    <BRow cols="1">
+  <BContainer fluid class="p-4">
+    <BRow cols="1" class="my-3">
       <BCol>
-        <NetworkBuilder />
+        <NetworkBuilder/>
       </BCol>
     </BRow>
   </BContainer>
