@@ -6,7 +6,7 @@ import {LinearModule} from "../nn/module/linear_module.ts";
 import {Flatten} from "../nn/layers/flatten.ts";
 import {Linear} from "../nn/layers/linear.ts";
 import {ReLu} from "../nn/layers/relu.ts";
-import {Softmax} from "../nn/mlp/softmax.ts";
+import {Softmax} from "../nn/layers/softmax.ts";
 import {crossEntropyLoss} from "../nn/utils.ts";
 import {NewTensor} from "../nn/tensor_new.ts";
 

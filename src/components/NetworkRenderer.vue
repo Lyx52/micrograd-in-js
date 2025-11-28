@@ -10,31 +10,81 @@ export default defineComponent({
     layers: Array<NetworkLayer>
   },
   methods: {
-    renderGraph(layers) {
-      console.log(layers);
-      const createLayer = (layer) => {
-        
+    renderGraph() {
+      const nodes = [];
+      const edges = [];
+      let id = 0;
+      const HORIZONTAL_SPACING = 200;
+      const VERTICAL_SPACING = 80;
+      const inputNode = {
+        id: 'input',
+        label: 'Inputs',
+        x: 0,
+        y: 0,
+      }
+
+      const createLayer = (layerIndex, layer) => {
+        const layerNodes = [];
+        const count = layer.outputs;
+        const x = (layerIndex + 1) * HORIZONTAL_SPACING;
+
+        for (let i = 0; i < count; i++) {
+          const y = (i - (count - 1) / 2) * VERTICAL_SPACING;
+
+          layerNodes.push({
+            id: id++,
+            label: 'Neuron',
+            x: x,
+            y: y
+          });
+        }
+
+        return layerNodes;
+      }
+
+      const connectNodes = (inputs, outputs) => {
+        const edges = [];
+        for (let i = 0; i < outputs.length; i++) {
+          for (let j = 0; j < inputs.length; j++) {
+            const from = inputs[j];
+            const to = outputs[i];
+            edges.push({
+              from: from.id,
+              to: to.id,
+              smooth: { type: 'cubicBezier' }
+            })
+          }
+        }
+
+        return edges;
+      }
+
+      let previousNodes = [inputNode];
+      nodes.push(inputNode)
+      for (let i = 0; i < this.layers.length; i++) {
+        const layer = this.layers[i];
+
+        const currentNodes = createLayer(i, layer);
+
+        nodes.push(...currentNodes);
+        edges.push(...connectNodes(previousNodes, currentNodes));
+
+        previousNodes = currentNodes;
       }
 
       const data = {
-        nodes: new DataSet([
-          { id: 1, label: "Node 1" },
-          { id: 2, label: "Node 2" },
-          { id: 3, label: "Node 3" },
-          { id: 4, label: "Node 4" },
-          { id: 5, label: "Node 5" },
-        ]),
-        edges: new DataSet([
-          { from: 1, to: 3 },
-          { from: 1, to: 2 },
-          { from: 2, to: 4 },
-          { from: 2, to: 5 },
-          { from: 3, to: 3 },
-        ]),
+        nodes: new DataSet(nodes),
+        edges: new DataSet(edges),
       };
 
       const renderContainer = document.querySelector('#renderContainer');
-      const network = new Network(renderContainer, data, {});
+      renderContainer.style.height = '40vh';
+      const network = new Network(renderContainer, data, {
+        interaction: { dragNodes: false },
+        physics: {
+          enabled: false,
+        },
+      });
     }
   },
   watch: {
@@ -50,10 +100,7 @@ export default defineComponent({
 
 <template>
   <div class="d-flex flex-column">
-    {{ JSON.stringify(layers) }}
-    <div id="renderContainer">
-
-    </div>
+    <div id="renderContainer"></div>
   </div>
 </template>
 
