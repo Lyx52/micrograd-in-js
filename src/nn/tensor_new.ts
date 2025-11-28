@@ -266,13 +266,13 @@ const FlattenBackward: BackwardFunction = (parent: NewTensor) => {
 }
 
 export class NewTensor {
-    private _backward: BackwardFunction = EmptyBackward;
+    public _backward: BackwardFunction = EmptyBackward;
     private dimensions: number[];
     private elements: number;
     public children: NewTensor[];
     public gradients: number[];
     public backing: number[];
-
+    public parent: NewTensor|null = null;
     constructor(dims: number[], children: NewTensor[] = []) {
         if (dims.length === 0) {
             throw new Error('Tensor must be atleast one dimensional');
@@ -302,6 +302,12 @@ export class NewTensor {
         return NewTensor.from(data)
             .setChildren(tensors)
             .setBackward(FromTensorsBackward);
+    }
+
+    public setParent(parent: NewTensor): NewTensor {
+        this.parent = parent;
+
+        return this;
     }
 
     public setChildren(children: NewTensor[]): NewTensor {
@@ -358,7 +364,9 @@ export class NewTensor {
     public flatten(): NewTensor {
         const tensor = new NewTensor([this.backing.length], [this]);
         tensor.backing = this.backing;
-        tensor._backward = FlattenBackward;
+        tensor.gradients = this.gradients;
+        tensor._backward = this._backward;
+        tensor.setParent(this);
         return tensor;
     }
 
@@ -401,7 +409,9 @@ export class NewTensor {
         this.gradients = new Array(this.backing.length).fill(1);
 
         const nodes = this.topological().reverse();
-        for (const node of nodes) {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+
             if (node._backward) {
                 node._backward(node);
                 continue;
@@ -451,15 +461,21 @@ export class NewTensor {
             otherTensor = new NewTensor(this.dimensions);
             otherTensor.backing = new Array(this.backing.length).fill(other);
         }
-
-        return NewTensor.from(this.item()
+        const tensor = NewTensor.from(this.item()
             .map((v, i) => callback(v, otherTensor.backing[i]))
-        ).setDimension(this.dimensions).setChildren([this, otherTensor]).setBackward(backward);
+        );
+
+        return tensor
+            .setDimension(this.dimensions)
+            .setChildren([this, otherTensor])
+            .setBackward(backward);
     }
 
     zerograd(): NewTensor {
         this.gradients = new Array(this.backing.length).fill(0);
-
+        for (const child of this.children) {
+            child.zerograd();
+        }
         return this;
     }
 

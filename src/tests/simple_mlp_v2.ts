@@ -1,10 +1,12 @@
 import {MLP} from "../nn/mlp/mlp.ts";
-import {crossEntropyLoss} from "../nn/utils.ts";
+import {crossEntropyLoss, maxMarginLoss} from "../nn/utils.ts";
 import {NewTensor} from "../nn/tensor_new.ts";
 import {LinearModule} from "../nn/module/linear_module.ts";
 import {Linear} from "../nn/layers/linear.ts";
+import {RandomGenerator} from "../nn/random.ts";
 
 export const runSimpleMLP2 = () => {
+    RandomGenerator.Seed(0)
     const mlp = new LinearModule(
         new Linear(3, 4),
         new Linear(4, 4),
@@ -25,8 +27,8 @@ export const runSimpleMLP2 = () => {
     ];
 
     // Train
-    const learningRate = 0.001;
-    const steps = 1000;
+    const learningRate = 0.01;
+    const steps = 8;
     for (let i = 0; i <= steps; i++) {
         mlp.updateParameters((tensor: NewTensor) => {
             for (let j = 0; j < tensor.backing.length; j++) {
@@ -34,7 +36,7 @@ export const runSimpleMLP2 = () => {
             }
         });
 
-        const loss = crossEntropyLoss(mlp, ys, xs);
+        const loss = maxMarginLoss(mlp, ys, xs);
         mlp.zerograd();
         loss.backward();
         console.log(`[Step ${i}/${steps}] loss: ${loss.scalar()}`)

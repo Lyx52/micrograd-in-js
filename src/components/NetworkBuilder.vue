@@ -270,7 +270,8 @@ export default defineComponent<INetworkBuilder>({
       const result = await worker.testModule(xs);
       this.testingResult = JSON.stringify(result);
     },
-    stopNetwork() {
+    async stopNetwork() {
+      await worker.cancelTraining();
       this.training = false;
     },
     async runNetwork() {

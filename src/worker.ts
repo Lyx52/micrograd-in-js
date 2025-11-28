@@ -9,7 +9,7 @@ import {ReLu} from "./nn/layers/relu.ts";
 import {Linear} from "./nn/layers/linear.ts";
 import {Softmax} from "./nn/layers/softmax.ts";
 import {NewTensor} from "./nn/tensor_new.ts";
-import {crossEntropyLoss} from "./nn/utils.ts";
+import {crossEntropyLoss, maxMarginLoss} from "./nn/utils.ts";
 import {RandomGenerator} from "./nn/random.ts";
 import {readIdx} from "./idx.ts";
 import {trainImages, trainLabels} from "../data/data.ts";
@@ -56,6 +56,7 @@ const worker: INetworkWorker = {
     learningRate: 0.01,
     seed: 0,
     lossEveryN: 3,
+    training: false,
     createModule(layers: NetworkLayer[], seed = 0) {
         this.seed = seed;
         this.loss = [];
@@ -115,19 +116,27 @@ const worker: INetworkWorker = {
     testModule(xs: number[]): number[] {
         return this.module?.execute(NewTensor.from(xs))?.backing ?? [];
     },
+    cancelTraining() {
+        console.log('cancelTraining')
+        this.training = false;
+    },
     trainModule() {
         if (!this.module) {
             return;
         }
-
+        this.training = true;
         for (let i = 0; i <= this.epochs; i++) {
+            console.log(this.training)
+            if (!this.training) {
+                break;
+            }
             this.module.updateParameters((tensor: NewTensor) => {
                 for (let j = 0; j < tensor.backing.length; j++) {
                     tensor.backing[j] += -this.learningRate * tensor.gradients[j];
                 }
             });
 
-            const loss = crossEntropyLoss(this.module, this.ys, this.xs);
+            const loss = maxMarginLoss(this.module, this.ys, this.xs);
             this.module.zerograd();
             loss.backward();
 
@@ -136,7 +145,7 @@ const worker: INetworkWorker = {
                 this.publishLoss();
             }
         }
+        this.training = false;
     }
 };
-
 Comlink.expose(worker);

@@ -7,11 +7,11 @@ import {Flatten} from "../nn/layers/flatten.ts";
 import {Linear} from "../nn/layers/linear.ts";
 import {ReLu} from "../nn/layers/relu.ts";
 import {Softmax} from "../nn/layers/softmax.ts";
-import {crossEntropyLoss} from "../nn/utils.ts";
+import {crossEntropyLoss, maxMarginLoss} from "../nn/utils.ts";
 import {NewTensor} from "../nn/tensor_new.ts";
 
 
-export const runMinst = async (trainCount = 20, epochs = 1000, learningRate = 0.5) => {
+export const runMinst = async (trainCount = 3, epochs = 1, learningRate = 0.01) => {
     const [_, labelsData] = await readIdx(trainLabels, [trainCount]);
     const [imagesDims, imagesData] = await readIdx(trainImages, [trainCount, -1, -1]);
 

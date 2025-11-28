@@ -37,6 +37,29 @@ export const crossEntropyLoss = (network: ICallable, ys: NewTensor[], xs: NewTen
     return NewTensor.fromTensors(losses).sum();
 }
 
+const sampleRandom = (count: number, ys: NewTensor[], xs: NewTensor[]) => {
+    const indexes = [];
+    for (let i = 0; i < count; i++) {
+        indexes.push(Math.floor(Math.random() * xs.length));
+    }
+
+    return [
+        indexes.map(i => ys[i].clone()),
+        indexes.map(i => xs[i])
+    ];
+}
+
+export const maxMarginLoss = (network: ICallable, ys: NewTensor[], xs: NewTensor[], batchSize: number = 10) => {
+    const [ydata, xdata] = sampleRandom(batchSize, ys, xs);
+    let relu = undefined;
+    for (let i = 0; i < xdata.length; i++) {
+        const result = network.execute(xdata[i]);
+        relu = ydata[i].mul(result).negate().add(1).relu();
+    }
+
+    return NewTensor.from([1])
+}
+
 export const renderGraph = (root: Value) => {
     const [nodes, edges] = root.graph()
 
