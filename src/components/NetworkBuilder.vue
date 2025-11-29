@@ -313,7 +313,7 @@ instance.worker.addEventListener("message", (event: MessageEvent) => {
 });
 
 // @ts-ignore
-export default defineComponent<INetworkBuilder>({
+export default defineComponent({
   computed: {
     LayerType() {
       return LayerType

@@ -77,7 +77,7 @@ export default defineComponent({
         edges: new DataSet(edges),
       };
 
-      const renderContainer = document.querySelector('#renderContainer');
+      const renderContainer = document.querySelector('#renderContainer') as any;
       renderContainer.style.height = '40vh';
       const network = new Network(renderContainer, data, {
         interaction: { dragNodes: false },

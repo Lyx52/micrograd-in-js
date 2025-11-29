@@ -90,9 +90,9 @@ const worker: INetworkWorker = {
         this.loss = [];
         this.lossEveryN = lossEveryN;
         this.batchSize = batchSize;
-
-        const [_, labelsData] = await readIdx(trainLabels, [100]);
-        const [imagesDims, imagesData] = await readIdx(trainImages, [100, -1, -1]);
+        const imageCount = 10000;
+        const [_, labelsData] = await readIdx(trainLabels, [imageCount]);
+        const [imagesDims, imagesData] = await readIdx(trainImages, [imageCount, -1, -1]);
 
         this.ys = labelsData
             .map(v => new Array(10).fill(0).map((_, i) => v === i ? 1 : 0))

@@ -14,11 +14,15 @@ export interface INetworkWorker {
     seed: number;
     lossEveryN: number;
     batchSize: number;
+    training: boolean;
     createModule(layers: NetworkLayer[], seed: number);
     startTraining(epochs: number, learningRate: number, lossEveryN: number, x: number[][], y: number[][], batchSize: number);
     startTrainingMinst(epochs: number, learningRate: number, lossEveryN: number, batchSize: number);
     testModule(xs: number[]): number[];
     cancelTraining();
+    resetModule();
+    publishLoss();
+    trainModule();
 }
 
 export interface IWorker {
