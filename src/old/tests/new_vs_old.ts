@@ -1,6 +1,6 @@
-import {RandomGenerator} from "../nn/random.ts";
-import {NewTensor} from "../nn/tensor_new.ts";
-import {Tensor} from "../nn/tensor.ts";
+import {RandomGenerator} from "../../nn/random.ts";
+import {NewTensor} from "../../nn/tensor_new.ts";
+import {Tensor} from "../tensor.ts";
 export const testNewVsOldTensor = () => {
     RandomGenerator.Seed(0);
     console.time('NewTensorMulBackward')

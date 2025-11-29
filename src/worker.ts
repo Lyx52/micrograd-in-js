@@ -9,16 +9,26 @@ import {ReLu} from "./nn/layers/relu.ts";
 import {Linear} from "./nn/layers/linear.ts";
 import {Softmax} from "./nn/layers/softmax.ts";
 import {NewTensor} from "./nn/tensor_new.ts";
-import {crossEntropyLoss, maxMarginLoss} from "./nn/utils.ts";
+import {crossEntropyLoss} from "./nn/utils.ts";
 import {RandomGenerator} from "./nn/random.ts";
 import {readIdx} from "./idx.ts";
 import {trainImages, trainLabels} from "../data/data.ts";
+import {ActivationType} from "./render/ActivationTypes.ts";
+import {type ActivationCallback, NoneActivation, ReluActivation, TanhActivation} from "./nn/activation.ts";
+
+const toActivation = (activation: ActivationType): ActivationCallback => {
+    switch (activation) {
+        case ActivationType.ReLu: return ReluActivation;
+        case ActivationType.Tanh: return TanhActivation;
+    }
+    return NoneActivation;
+}
 
 const toLayer = (layer: NetworkLayer): ICallable => {
     switch (layer.type) {
         case LayerType.Flatten: return new Flatten();
         case LayerType.ReLu: return new ReLu();
-        case LayerType.Linear: return new Linear(layer.inputs, layer.outputs);
+        case LayerType.Linear: return new Linear(layer.inputs, layer.outputs, true, toActivation(layer.activation));
         case LayerType.Softmax: return new Softmax();
     }
 }
@@ -56,6 +66,7 @@ const worker: INetworkWorker = {
     learningRate: 0.01,
     seed: 0,
     lossEveryN: 3,
+    batchSize: 10,
     training: false,
     createModule(layers: NetworkLayer[], seed = 0) {
         this.seed = seed;
@@ -73,11 +84,12 @@ const worker: INetworkWorker = {
             data: this.loss
         })
     },
-    async startTrainingMinst(epochs: number, learningRate: number, lossEveryN: number) {
+    async startTrainingMinst(epochs: number, learningRate: number, lossEveryN: number, batchSize: number) {
         this.epochs = epochs;
         this.learningRate = learningRate;
         this.loss = [];
         this.lossEveryN = lossEveryN;
+        this.batchSize = batchSize;
 
         const [_, labelsData] = await readIdx(trainLabels, [100]);
         const [imagesDims, imagesData] = await readIdx(trainImages, [100, -1, -1]);
@@ -94,9 +106,10 @@ const worker: INetworkWorker = {
 
         this.trainModule();
     },
-    startTraining(epochs: number, learningRate: number, lossEveryN: number, x: number[][], y: number[][]) {
+    startTraining(epochs: number, learningRate: number, lossEveryN: number, x: number[][], y: number[][], batchSize: number) {
         this.epochs = epochs;
         this.learningRate = learningRate;
+        this.batchSize = batchSize;
 
         if (x.length !== y.length) {
             return;
@@ -117,7 +130,6 @@ const worker: INetworkWorker = {
         return this.module?.execute(NewTensor.from(xs))?.backing ?? [];
     },
     cancelTraining() {
-        console.log('cancelTraining')
         this.training = false;
     },
     trainModule() {
@@ -126,7 +138,6 @@ const worker: INetworkWorker = {
         }
         this.training = true;
         for (let i = 0; i <= this.epochs; i++) {
-            console.log(this.training)
             if (!this.training) {
                 break;
             }
@@ -136,7 +147,7 @@ const worker: INetworkWorker = {
                 }
             });
 
-            const loss = maxMarginLoss(this.module, this.ys, this.xs);
+            const loss = crossEntropyLoss(this.module, this.ys, this.xs, this.batchSize);
             this.module.zerograd();
             loss.backward();
 

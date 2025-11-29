@@ -1,5 +1,7 @@
 import {benchmarkEnd, benchmarkStart, getTotalElements} from "./utils.ts";
 import {RandomGenerator} from "./random.ts";
+import {Flatten} from "./layers/flatten.ts";
+import {Value} from "../old/value.ts";
 export type NumberArray = (NumberArray|number)[];
 
 const getDimensions = (dimension: NumberArray|number, dims: number[] = []): number[] => {
@@ -272,7 +274,6 @@ export class NewTensor {
     public children: NewTensor[];
     public gradients: number[];
     public backing: number[];
-    public parent: NewTensor|null = null;
     constructor(dims: number[], children: NewTensor[] = []) {
         if (dims.length === 0) {
             throw new Error('Tensor must be atleast one dimensional');
@@ -302,12 +303,6 @@ export class NewTensor {
         return NewTensor.from(data)
             .setChildren(tensors)
             .setBackward(FromTensorsBackward);
-    }
-
-    public setParent(parent: NewTensor): NewTensor {
-        this.parent = parent;
-
-        return this;
     }
 
     public setChildren(children: NewTensor[]): NewTensor {
@@ -365,8 +360,7 @@ export class NewTensor {
         const tensor = new NewTensor([this.backing.length], [this]);
         tensor.backing = this.backing;
         tensor.gradients = this.gradients;
-        tensor._backward = this._backward;
-        tensor.setParent(this);
+        tensor._backward = FlattenBackward;
         return tensor;
     }
 
@@ -405,7 +399,18 @@ export class NewTensor {
         return tensor;
     }
 
+    public grads() {
+        const gradients = [];
+        gradients.push(...this.gradients);
+        gradients.push(...this.children.map(v => v.grads()));
+        return gradients;
+    }
+
     public backward() {
+        if (!this.isScalar()) {
+            throw new Error("Backwards can only be used on scalar tensors");
+        }
+
         this.gradients = new Array(this.backing.length).fill(1);
 
         const nodes = this.topological().reverse();
@@ -546,7 +551,7 @@ export class NewTensor {
 
     public sub(other: number|NewTensor) {
         if (other instanceof NewTensor) {
-            return this.add(other.negate());
+            return this.negate().add(other);
         }
 
         return this.add(other * -1);

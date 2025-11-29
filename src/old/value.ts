@@ -1,4 +1,4 @@
-import {RandomGenerator} from "./random.ts";
+import {RandomGenerator} from "../nn/random.ts";
 
 export class Value {
     public Data: number;
@@ -38,6 +38,12 @@ export class Value {
         }
 
         return result;
+    }
+
+    public gradients() {
+        const grads = [];
+        grads.push(this.Grad, this._children.map(c => c.gradients()));
+        return grads;
     }
 
     public static Random(): Value {

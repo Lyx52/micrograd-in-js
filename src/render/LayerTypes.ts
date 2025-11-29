@@ -1,3 +1,5 @@
+import type {IOption} from "../nn/utils.ts";
+
 export enum LayerType {
     Linear = 'linear',
     ReLu = 'relu',
@@ -18,11 +20,6 @@ export function toLayerName(type: LayerType) {
         default:
             return '';
     }
-}
-
-export interface IOption<TValue> {
-    value: TValue;
-    text: string;
 }
 
 export const getLayerOptions = (): IOption<LayerType>[] => {

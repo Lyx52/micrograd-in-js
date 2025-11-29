@@ -1,5 +1,5 @@
 import {getTotalElements} from "./nn/utils.ts";
-import {Tensor} from "./nn/tensor.ts";
+import {Tensor} from "./old/tensor.ts";
 
 const enum IdxTypes {
     UBYTE = 0x08,

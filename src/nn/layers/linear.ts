@@ -1,17 +1,20 @@
 import type {ICallable} from "../interfaces/ICallable.ts";
-import type {Value} from "../value.ts";
-import {Tensor} from "../tensor.ts";
+import type {Value} from "../../old/value.ts";
+import {Tensor} from "../../old/tensor.ts";
 import type {IParameterized, ParameterUpdateCallback} from "../interfaces/IParameterized.ts";
 import {NewTensor} from "../tensor_new.ts";
+import {type ActivationCallback, NoneActivation} from "../activation.ts";
 
 class LinearNeuron implements ICallable, IParameterized {
     private _weights: NewTensor;
     private _bias: NewTensor;
     private _useBias = true;
+    private _activation: ActivationCallback = NoneActivation;
 
-    constructor(inputs: number, useBias = true) {
+    constructor(inputs: number, useBias = true, activation: ActivationCallback = NoneActivation) {
         this._weights = NewTensor.randn(inputs);
         this._useBias = useBias;
+        this._activation = activation;
         if (this._useBias) {
             this._bias = NewTensor.randn(1);
         }
@@ -38,7 +41,7 @@ class LinearNeuron implements ICallable, IParameterized {
             sum = sum.add(this._bias);
         }
 
-        return sum;
+        return this._activation(sum);
     }
 
     public zerograd() {
@@ -52,9 +55,9 @@ class LinearNeuron implements ICallable, IParameterized {
 
 export class Linear implements ICallable, IParameterized {
     private _neurons: LinearNeuron[] = [];
-    constructor(inputs: number, outputs: number, useBias = true) {
+    constructor(inputs: number, outputs: number, useBias = true, activation: ActivationCallback = NoneActivation) {
         for (let i = 0; i < outputs; i++) {
-            this._neurons.push(new LinearNeuron(inputs, useBias))
+            this._neurons.push(new LinearNeuron(inputs, useBias, activation))
         }
     }
 

@@ -1,4 +1,4 @@
-import { Value } from "./value";
+import { Value } from "../old/value.ts";
 import type {ICallable} from "./interfaces/ICallable.ts";
 import {Network} from "vis-network";
 import {v4 as uuid} from "uuid";
@@ -27,20 +27,23 @@ export const getTotalElements = (...dims: number[]): number => {
     return elements;
 }
 
-export const crossEntropyLoss = (network: ICallable, ys: NewTensor[], xs: NewTensor[]) => {
+export const crossEntropyLoss = (network: ICallable, ys: NewTensor[], xs: NewTensor[], batchSize = 10) => {
     const losses: NewTensor[] = [];
-    for (let i = 0; i < xs.length; i++) {
-        const result = network.execute(xs[i]);
-        losses.push(result.mse(ys[i]));
+    const [ysamples, xsamples] = sampleRandom(Math.min(xs.length, batchSize), ys, xs);
+
+    for (let i = 0; i < xsamples.length; i++) {
+        const result = network.execute(xsamples[i]);
+        losses.push(result.mse(ysamples[i]));
     }
 
     return NewTensor.fromTensors(losses).sum();
 }
 
-const sampleRandom = (count: number, ys: NewTensor[], xs: NewTensor[]) => {
+export const sampleRandom = (count: number, ys: NewTensor[], xs: NewTensor[]) => {
     const indexes = [];
+    const allIndexes = xs.map((_, i) => i)
     for (let i = 0; i < count; i++) {
-        indexes.push(Math.floor(Math.random() * xs.length));
+        indexes.push(allIndexes.splice(Math.floor(Math.random() * allIndexes.length), 1)[0]);
     }
 
     return [
@@ -93,4 +96,9 @@ export const renderGraph = (root: Value) => {
     container.classList.add('graph-container');
     document.body.appendChild(container);
     const network = new Network(container, data, options as any);
+}
+
+export interface IOption<TValue> {
+    value: TValue;
+    text: string;
 }

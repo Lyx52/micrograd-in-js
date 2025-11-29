@@ -48,30 +48,58 @@
           <BButton class="text-nowrap" variant="danger" @click="stopNetwork" v-if="training">
             Stop training
           </BButton>
-          <BFormInput
-              class="mt-auto"
-              v-model="seed"
-              type="number"
-              placeholder="Seed"
-          />
-          <BFormInput
-              class="mt-auto"
-              v-model="learningRate"
-              type="number"
-              placeholder="Learning rate"
-          />
-          <BFormInput
-              class="mt-auto"
-              v-model="epochs"
-              type="number"
-              placeholder="Epochs"
-          />
-          <BFormInput
-              class="mt-auto"
-              v-model="lossEveryN"
-              type="number"
-              placeholder="Loss every N epochs"
-          />
+          <BInputGroup
+              prepend="Seed"
+          >
+            <BFormInput
+                class="mt-auto"
+                v-model="seed"
+                type="number"
+                placeholder="Seed"
+            />
+          </BInputGroup>
+          <BInputGroup
+              prepend="Loss every N epochs"
+          >
+            <BFormInput
+                class="mt-auto"
+                v-model="lossEveryN"
+                type="number"
+                placeholder="Loss every N epochs"
+            />
+          </BInputGroup>
+        </div>
+        <div class="d-flex justify-content-between gap-2 mt-3">
+          <BInputGroup
+              prepend="Learning rate"
+          >
+            <BFormInput
+                class="mt-auto"
+                v-model="learningRate"
+                type="number"
+                placeholder="Learning rate"
+            />
+          </BInputGroup>
+          <BInputGroup
+              prepend="Epochs"
+          >
+            <BFormInput
+                class="mt-auto"
+                v-model="epochs"
+                type="number"
+                placeholder="Epochs"
+            />
+          </BInputGroup>
+          <BInputGroup
+              prepend="Batch size"
+          >
+            <BFormInput
+                class="mt-auto"
+                v-model="batchSize"
+                type="number"
+                placeholder="Batch size"
+            />
+          </BInputGroup>
         </div>
       </BCard>
     </BCol>
@@ -109,26 +137,53 @@
           <BButton variant="info" @click="useExampleMinst">
             Use example Minst
           </BButton>
+          <BButton variant="info" @click="useExampleXor">
+            Use example XOR
+          </BButton>
         </div>
         <div class="d-flex justify-content-between gap-2">
-          <select class="form-select" v-model="layer.type">
-            <option v-for="item in layerOptions" :key="item.value" :value="item.value">
-              {{ item.text }}
-            </option>
-          </select>
-          <BFormInput
-              v-model="layer.inputs"
-              type="number"
-              placeholder="Inputs"
-          />
-          <BFormInput
-              v-model="layer.outputs"
-              type="number"
-              placeholder="Outputs"
-          />
+          <BInputGroup
+              prepend="Type"
+          >
+            <select class="form-select" v-model="layer.type">
+              <option v-for="item in layerOptions" :key="item.value" :value="item.value">
+                {{ item.text }}
+              </option>
+            </select>
+          </BInputGroup>
+          <BInputGroup
+              prepend="Inputs"
+          >
+            <BFormInput
+                v-model="layer.inputs"
+                type="number"
+                placeholder="Inputs"
+            />
+          </BInputGroup>
+          <BInputGroup
+              prepend="Outputs"
+          >
+            <BFormInput
+                v-model="layer.outputs"
+                type="number"
+                placeholder="Outputs"
+            />
+          </BInputGroup>
           <BButton variant="success" @click="addLayer">
             +
           </BButton>
+        </div>
+        <div class="d-flex mt-3" v-if="layer.type === LayerType.Linear">
+          <BInputGroup
+              prepend="Activation"
+              style="width: fit-content"
+          >
+            <select class="form-select" v-model="layer.activation">
+              <option v-for="item in activationOptions" :key="item.value" :value="item.value">
+                {{ item.text }}
+              </option>
+            </select>
+          </BInputGroup>
         </div>
       </BCard>
     </BCol>
@@ -154,27 +209,51 @@
               :key="element.id"
           >
             <div class="d-flex justify-content-between gap-2">
-              <select class="form-select" v-model="element.type">
-                <option v-for="item in layerOptions" :key="item.value" :value="item.value">
-                  {{ item.text }}
-                </option>
-              </select>
-              <BFormInput
-                  v-model="element.inputs"
-                  type="number"
-                  placeholder="Inputs"
-                  :class="{
+              <BInputGroup
+                  prepend="Type"
+              >
+                <select class="form-select" v-model="element.type">
+                  <option v-for="item in layerOptions" :key="item.value" :value="item.value">
+                    {{ item.text }}
+                  </option>
+                </select>
+              </BInputGroup>
+              <BInputGroup
+                  prepend="Inputs"
+              >
+                <BFormInput
+                    v-model="element.inputs"
+                    type="number"
+                    placeholder="Inputs"
+                    :class="{
                     'text-bg-danger': validateLayer(element),
                   }"
-              />
-              <BFormInput
-                  v-model="element.outputs"
-                  type="number"
-                  placeholder="Outputs"
-              />
+                />
+              </BInputGroup>
+              <BInputGroup
+                  prepend="Outputs"
+              >
+                <BFormInput
+                    v-model="element.outputs"
+                    type="number"
+                    placeholder="Outputs"
+                />
+              </BInputGroup>
               <BButton variant="danger" @click="() => removeLayer(element.id)">
                 X
               </BButton>
+            </div>
+            <div class="d-flex mt-3" v-if="element.type === LayerType.Linear">
+              <BInputGroup
+                  prepend="Activation"
+                  style="width: fit-content"
+              >
+                <select class="form-select" v-model="element.activation">
+                  <option v-for="item in activationOptions" :key="item.value" :value="item.value">
+                    {{ item.text }}
+                  </option>
+                </select>
+              </BInputGroup>
             </div>
           </BCard>
         </draggable>
@@ -190,13 +269,13 @@ import {
   BButton,
   BCard,
   BCol,
+  BFormCheckbox,
   BFormInput,
   BFormTextarea,
+  BInputGroup,
   BListGroup,
   BListGroupItem,
-  BRow,
-  BInputGroup,
-  BFormCheckbox
+  BRow
 } from "bootstrap-vue-next";
 import {NetworkLayer} from "../render/NetworkLayer.ts";
 import {getLayerOptions, LayerType} from "../render/LayerTypes.ts";
@@ -204,6 +283,7 @@ import {LinearModule} from "../nn/module/linear_module.ts";
 import NetworkRenderer from "./NetworkRenderer.vue";
 import LossChart from "./LossChart.vue";
 import {createWorker} from "../worker_context.ts";
+import {ActivationType, getActivationOptions} from "../render/ActivationTypes.ts";
 
 interface IValues {
   x: string;
@@ -234,8 +314,14 @@ instance.worker.addEventListener("message", (event: MessageEvent) => {
 
 // @ts-ignore
 export default defineComponent<INetworkBuilder>({
+  computed: {
+    LayerType() {
+      return LayerType
+    }
+  },
   methods: {
     getLayerOptions,
+    getActivationOptions,
     removeLayer(id: number) {
       this.list = this.list.filter((item: NetworkLayer) => item.id !== id);
     },
@@ -243,9 +329,10 @@ export default defineComponent<INetworkBuilder>({
       this.values = this.values.filter((item: IValues) => item.id !== id);
     },
     addLayer() {
-      const layer = new NetworkLayer(this.id++, this.layer.type, Number(this.layer.inputs), Number(this.layer.outputs));
+      const layer = new NetworkLayer(this.id++, this.layer.type, this.layer.activation, Number(this.layer.inputs), Number(this.layer.outputs));
       this.list.push(layer);
-      this.layer.type = LayerType.ReLu;
+      this.layer.type = LayerType.Linear;
+      this.layer.activation = ActivationType.ReLu;
       this.inputs = Number(this.outputs);
       this.outputs = 10;
     },
@@ -276,12 +363,12 @@ export default defineComponent<INetworkBuilder>({
     },
     async runNetwork() {
       const seed = Number(this.seed) >= 0 ? Number(this.seed) : Math.random() * 100;
-      await worker.createModule(this.list.map(v => new NetworkLayer(v.id, v.type, Number(v.inputs), Number(v.outputs))), seed)
+      await worker.createModule(this.list.map(v => new NetworkLayer(v.id, v.type, v.activation, Number(v.inputs), Number(v.outputs))), seed)
       if (this.useMinstDataset) {
-        worker.startTrainingMinst(Number(this.epochs), Number(this.learningRate), Number(this.lossEveryN));
+        worker.startTrainingMinst(Number(this.epochs), Number(this.learningRate), Number(this.lossEveryN), Number(this.batchSize));
       } else {
         const [xs, ys] = this.getData();
-        worker.startTraining(Number(this.epochs), Number(this.learningRate), Number(this.lossEveryN), xs ?? [], ys ?? []);
+        worker.startTraining(Number(this.epochs), Number(this.learningRate), Number(this.lossEveryN), xs ?? [], ys ?? [], Number(this.batchSize));
       }
 
       this.training = true;
@@ -320,9 +407,9 @@ export default defineComponent<INetworkBuilder>({
     },
     useExampleMLP() {
       this.list = [
-        new NetworkLayer(0, LayerType.Linear, 3, 4),
-        new NetworkLayer(1, LayerType.Linear, 4, 4),
-        new NetworkLayer(2, LayerType.Linear, 4, 1),
+        new NetworkLayer(0, LayerType.Linear, ActivationType.None, 3, 4),
+        new NetworkLayer(1, LayerType.Linear, ActivationType.None, 4, 4),
+        new NetworkLayer(2, LayerType.Linear, ActivationType.None, 4, 1),
       ];
 
       this.id = 3;
@@ -351,17 +438,48 @@ export default defineComponent<INetworkBuilder>({
         },
       ];
     },
-    useExampleMinst() {
+    useExampleXor() {
       this.list = [
-        new NetworkLayer(0, LayerType.Flatten, 28 * 28, 28 * 28),
-        new NetworkLayer(2, LayerType.Linear, 28 * 28, 128),
-        new NetworkLayer(2, LayerType.Linear, 128, 64),
-        new NetworkLayer(2, LayerType.Linear, 64, 32),
-        new NetworkLayer(3, LayerType.Linear, 32, 10),
-        new NetworkLayer(4, LayerType.Softmax, 10, 10),
+        new NetworkLayer(0, LayerType.Linear, ActivationType.Tanh, 2, 4),
+        new NetworkLayer(1, LayerType.Linear, ActivationType.Tanh, 4, 4),
+        new NetworkLayer(2, LayerType.Linear, ActivationType.None, 4, 1),
       ];
 
-      this.id = 5;
+      this.id = 3;
+      this.renderNetwork = true;
+      this.useMinstDataset = false;
+      this.values = [
+        {
+          x: '0 0',
+          y: '0',
+          id: 0,
+        },
+        {
+          x: '0 1',
+          y: '1',
+          id: 1,
+        },
+        {
+          x: '1 0',
+          y: '1',
+          id: 2,
+        },
+        {
+          x: '1 1',
+          y: '0',
+          id: 3,
+        },
+      ];
+    },
+    useExampleMinst() {
+      this.list = [
+        new NetworkLayer(0, LayerType.Flatten, ActivationType.None, 28 * 28, 28 * 28),
+        new NetworkLayer(1, LayerType.Linear, ActivationType.ReLu, 28 * 28, 32),
+        new NetworkLayer(2, LayerType.Linear, ActivationType.None, 32, 10),
+        new NetworkLayer(3, LayerType.Softmax, ActivationType.None, 10, 10),
+      ];
+
+      this.id = 4;
       this.renderNetwork = false;
       this.useMinstDataset = true;
       this.values = [];
@@ -387,15 +505,18 @@ export default defineComponent<INetworkBuilder>({
       id: 3,
       dataId: 4,
       layerOptions: getLayerOptions(),
+      activationOptions: getActivationOptions(),
       training: false,
       useMinstDataset: false,
       renderNetwork: true,
       layer: {
-        type: LayerType.ReLu,
+        type: LayerType.Linear,
+        activation: ActivationType.ReLu,
         inputs: 10,
         outputs: 1,
       },
       epochs: 20,
+      batchSize: 10,
       learningRate: 0.001,
       lossEveryN: 3,
       seed: -1,

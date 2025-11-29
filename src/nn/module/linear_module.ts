@@ -1,6 +1,6 @@
 import type { ICallable } from "../interfaces/ICallable.ts";
 import type {IModule} from "../interfaces/IModule.ts";
-import type {Tensor} from "../tensor.ts";
+import type {Tensor} from "../../old/tensor.ts";
 import type {IParameterized, ParameterUpdateCallback} from "../interfaces/IParameterized.ts";
 import type {NewTensor} from "../tensor_new.ts";
 

@@ -1,5 +1,5 @@
 import {Value} from "./value.ts";
-import {getTotalElements} from "./utils.ts";
+import {getTotalElements} from "../nn/utils.ts";
 
 export type TensorDimension = (Value|TensorDimension)[];
 export type TensorApplyCallback = (value: Value, index: number) => Value;
@@ -80,6 +80,10 @@ export class Tensor {
         this.backing = backing;
 
         return this;
+    }
+
+    public gradients() {
+        return this.item().map(v => v.gradients())
     }
 
     public setDimensions(dims: number[]): Tensor {

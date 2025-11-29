@@ -13,9 +13,10 @@ export interface INetworkWorker {
     learningRate: number;
     seed: number;
     lossEveryN: number;
+    batchSize: number;
     createModule(layers: NetworkLayer[], seed: number);
-    startTraining(epochs: number, learningRate: number, lossEveryN: number, x: number[][], y: number[][]);
-    startTrainingMinst(epochs: number, learningRate: number, lossEveryN: number);
+    startTraining(epochs: number, learningRate: number, lossEveryN: number, x: number[][], y: number[][], batchSize: number);
+    startTrainingMinst(epochs: number, learningRate: number, lossEveryN: number, batchSize: number);
     testModule(xs: number[]): number[];
     cancelTraining();
 }
